@@ -1,37 +1,39 @@
-// oar_unit.h
+// network.h
 #pragma once
-#include "imu.h"
-#include "network.h"
-#include "strain_gauge.h"
-#include <cstdint>
 
-class OarUnit {
+#include "espnow.h"
+#include "softap.h"
+#include <cstdint>
+class Network {
 private:
-  Network n;
-  IMU imu;
-  StrainGauge sg;
+  ESP_NOW esp;
+  SoftAP ap;
+  uint8_t channel;
+  bool is_leader;
 
 public:
   /**
-   * @brief Create an OarUnit object
+   * @brief Create a unified network manager
    *
-   * @param isLeader Whether this unit is the leader
+   * @param is_leader Whether this node is the leader or not
+   * @param ap_ssid Name of wifi network to be hosted. Ignored if !is_leader
+   * @param ap_pwd Password for wifi network to be hosted. Ignored if !is_leader
    *
-   * @return An OarUnit object
+   * @return A Network object
    */
-  OarUnit(bool isLeader /* imu pins */);
+  Network(bool is_leader, const char *ap_ssid, const char *ap_pwd);
 
   /**
-   * @brief Start hosting a wifi network and processing ESP data
+   * @brief Begin hosting wifi network if needed and processing data
    *
    * @param channel Wifi channel to use
    *
    * @return True if success
    */
-  bool begin(uint8_t channel);
+  bool begin();
 
   /**
-   * @brief Stop hosting network and processing ESP data
+   * @brief Stop wifi network and data processing
    *
    * @return True if success
    */
@@ -110,60 +112,4 @@ public:
    * @return Number of connected clients
    */
   uint8_t get_client_count() const;
-
-  /**
-   * @brief Reads all data into member variables
-   *
-   * @return True if success
-   */
-  bool update();
-
-  /**
-   * @brief Gets the acceleration in the X direction
-   *
-   * @return The current acceleration in the X direction in m/s^2
-   */
-  float get_accX() const;
-
-  /**
-   * @brief Gets the acceleration in the Y direction
-   *
-   * @return The current acceleration in the Y direction in m/s^2
-   */
-  float get_accY() const;
-
-  /**
-   * @brief Gets the acceleration in the Z direction
-   *
-   * @return The current acceleration in the Z direction in m/s^2
-   */
-  float get_accZ() const;
-
-  /**
-   * @brief Gets the angular velocity in the pitch
-   *
-   * @return The angular velocity in the pitch in degrees/s
-   */
-  float get_gyroX() const;
-
-  /**
-   * @brief Gets the angular velocity in the roll
-   *
-   * @return The angular velocity in the roll in degrees/s
-   */
-  float get_gyroY() const;
-
-  /**
-   * @brief Gets the angular velocity in the yaw
-   *
-   * @return The angular velocity in the yaw in degrees/s
-   */
-  float get_gyroZ() const;
-
-  /**
-   * @brief Gets the current force
-   *
-   * @return The current force in N
-   */
-  int get_force();
 };

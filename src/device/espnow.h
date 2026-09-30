@@ -34,12 +34,13 @@ public:
   /**
    * @brief Start ESP-NOW
    *
+   * @param channel Wifi channel to use. Must match the one used for SoftAP
    * @param follower_count The number of followers this node can have. Only
    * important if this is the leader
    *
    * @return True if success
    */
-  bool begin(int follower_count);
+  bool begin(uint8_t channel, int follower_count);
 
   /**
    * @brief Stop ESP-NOW

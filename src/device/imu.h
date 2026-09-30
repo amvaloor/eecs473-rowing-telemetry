@@ -27,6 +27,13 @@ public:
   bool begin();
 
   /**
+   * @brief Stops collecting data
+   *
+   * @return True if success
+   */
+  bool stop();
+
+  /**
    * @brief Reads all data into member variables
    *
    * @return True if success
