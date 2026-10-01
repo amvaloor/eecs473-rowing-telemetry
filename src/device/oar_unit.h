@@ -1,25 +1,24 @@
 // oar_unit.h
 #pragma once
+#include "espnow.h"
 #include "imu.h"
-#include "network.h"
 #include "strain_gauge.h"
 #include <cstdint>
 
 class OarUnit {
 private:
-  Network n;
+  ESP_NOW esp;
   IMU imu;
-  StrainGauge sg;
+  StrainGauge sg1;
+  StrainGauge sg2;
 
 public:
   /**
    * @brief Create an OarUnit object
    *
-   * @param isLeader Whether this unit is the leader
-   *
    * @return An OarUnit object
    */
-  OarUnit(bool isLeader /* imu pins */);
+  OarUnit(/* imu pins */);
 
   /**
    * @brief Start hosting a wifi network and processing ESP data
@@ -43,52 +42,20 @@ public:
   void process();
 
   /**
-   * @brief Send packet to leader
+   * @brief Send packet to central unit
    *
    * @return True if success
    */
   bool send_packet();
 
   /**
-   * @brief Get most recent packet from a specified follower
+   * @brief Registers the central unit
    *
-   * @param node_id The identification of the node from which to check the
-   * packet
-   * @param p The packet into which the collected data should be stored
+   * @param mac_addr The MAC address of the central unit in the form of an array
    *
    * @return True if success
    */
-  bool get_packet(int node_id, Packet &p);
-
-  /**
-   * @brief Get packets from all nodes, including this one
-   *
-   * @param ps The array into which the data should be copied
-   * @param size Number of elements ps can hold
-   *
-   * Only returns more that one packet if this is the leader node
-   *
-   * @return True if success
-   */
-  bool get_all_packets(Packet *ps, uint32_t size);
-
-  /**
-   * @brief Registers the leader of this node
-   *
-   * @param mac_addr The MAC address of the leader in the form of an array
-   *
-   * @return True if success
-   */
-  bool register_leader(const uint8_t *mac_addr);
-
-  /**
-   * @brief Registers a follower of this node
-   *
-   * @param mac_addr The MAC address of the follower in the form of an array
-   *
-   * @return True if success
-   */
-  bool register_follower(const uint8_t *mac_addr);
+  bool register_central(const uint8_t *mac_addr);
 
   /**
    * @brief Gets the channel used to host the network
@@ -103,13 +70,6 @@ public:
    * @return True if active
    */
   bool is_active() const;
-
-  /**
-   * @brief Gets number of connected clients
-   *
-   * @return Number of connected clients
-   */
-  uint8_t get_client_count() const;
 
   /**
    * @brief Reads all data into member variables

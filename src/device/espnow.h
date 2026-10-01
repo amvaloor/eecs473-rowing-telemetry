@@ -13,8 +13,7 @@ struct Node {
 
 class ESP_NOW {
 private:
-  uint8_t leader[6]; // A way to identify the leader
-  bool is_leader;
+  uint8_t target[6]; // MAC address of target
   Node *followers;
   // TODO semaphore to protect followers array
 
@@ -24,7 +23,7 @@ public:
    *
    * @return A new ESP_NOW object
    */
-  ESP_NOW(bool is_leader);
+  ESP_NOW();
 
   /**
    * @brief Destroy the ESP_NOW object
@@ -36,7 +35,7 @@ public:
    *
    * @param channel Wifi channel to use. Must match the one used for SoftAP
    * @param follower_count The number of followers this node can have. Only
-   * important if this is the leader
+   * important if this is the central unit
    *
    * @return True if success
    */
@@ -67,14 +66,12 @@ public:
    * @param ps The array into which the data should be copied
    * @param size Number of elements ps can hold
    *
-   * Only returns more that one packet if this is the leader node
-   *
    * @return True if success
    */
   bool get_all_packets(Packet *ps, uint32_t size);
 
   /**
-   * @brief Send packet to the leader
+   * @brief Send packet to the destination
    *
    * @param p The packet to send
    *
@@ -83,13 +80,13 @@ public:
   bool send_packet(const Packet &p);
 
   /**
-   * @brief Registers the leader of this node
+   * @brief Registers the target of this node
    *
-   * @param mac_addr The MAC address of the leader in the form of an array
+   * @param mac_addr The MAC address of the target in the form of an array
    *
    * @return True if success
    */
-  bool register_leader(const uint8_t *mac_addr);
+  bool register_target(const uint8_t *mac_addr);
 
   /**
    * @brief Registers a follower of this node
