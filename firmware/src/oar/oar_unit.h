@@ -1,9 +1,10 @@
 // oar_unit.h
 #pragma once
-#include "espnow.h"
-#include "imu.h"
-#include "strain_gauge.h"
+#include "rowing_espnow.h"
+#include "rowing_imu.h"
+#include "rowing_strain_gauge.h"
 #include <cstdint>
+namespace Rowing {
 
 class OarUnit {
 private:
@@ -127,3 +128,4 @@ public:
    */
   int get_force();
 };
+} // namespace Rowing

@@ -1,7 +1,8 @@
-// usb.h
+// rowing_usb.h
 #pragma once
 
 #include <cstdint>
+namespace Rowing {
 class USB {
 private:
   uint32_t baud_rate;
@@ -38,3 +39,4 @@ public:
    */
   bool write(char *data, uint32_t data_size);
 };
+} // namespace Rowing

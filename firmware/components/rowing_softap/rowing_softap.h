@@ -1,7 +1,8 @@
-// softap.h
+// rowing_softap.h
 #pragma once
 
 #include <cstdint>
+namespace Rowing {
 class SoftAP {
 private:
   char ssid[32];
@@ -60,3 +61,4 @@ public:
    */
   uint8_t get_client_count() const;
 };
+} // namespace Rowing

@@ -1,9 +1,10 @@
 // central_unit.h
 #pragma once
 
-#include "espnow.h"
-#include "softap.h"
+#include "rowing_espnow.h"
+#include "rowing_softap.h"
 #include <cstdint>
+namespace Rowing {
 class CentralUnit {
 private:
   ESP_NOW esp;
@@ -109,3 +110,4 @@ public:
    */
   uint8_t get_client_count() const;
 };
+} // namespace Rowing

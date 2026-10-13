@@ -1,0 +1,91 @@
+# This .gitignore is courtesy of Gemini
+# ==========================================
+# Operating System & IDE Files
+# ==========================================
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+.clangd/
+.cache/
+
+# ==========================================
+# PlatformIO & Embedded Firmware Build Outputs
+# ==========================================
+.pio/
+.pioenvs/
+.piolibdeps/
+*.elf
+*.bin
+*.hex
+*.map
+
+# ==========================================
+# Arduino IDE Temporary Files
+# ==========================================
+build/
+*.o
+*.a
+
+# ==========================================
+# Mobile App Dependencies & Builds (React Native / Flutter / etc.)
+# ==========================================
+app/node_modules/
+app/build/
+app/dist/
+app/.expo/
+app/ios/Pods/
+app/ios/build/
+app/android/.gradle/
+app/android/app/build/
+*.apk
+*.ipa
+
+# ==========================================
+# Hardware / PCB Tooling Artifacts
+# ==========================================
+*.kicad_prl
+*-backups/
+_autosave-*
+
+# ==========================================
+# Secrets & Local Configurations
+# ==========================================
+*.env
+*.env.local
+secrets.h
+wifi_credentials.h
+
+# ==========================================
+# Python (Scripts / Tooling)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env_python/
+
+# ==========================================
+# C++ Language Server Tooling
+# ==========================================
+compile_commands.json
+
+# ==========================================
+# Node.js / App Error Logs
+# ==========================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================
+# Additional OS Files
+# ==========================================
+desktop.ini
+.AppleDouble
+.LSOverride
+Icon?

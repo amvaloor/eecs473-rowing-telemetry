@@ -1,6 +1,7 @@
-// imu.h
+// rowing_imu.h
 #pragma once
 
+namespace Rowing {
 class IMU {
 private:
   // TODO pin numbers
@@ -82,3 +83,4 @@ public:
    */
   float get_gyroZ() const;
 };
+} // namespace Rowing

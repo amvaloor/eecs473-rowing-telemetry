@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    - -Icomponents/rowing_espnow
+    - -Icomponents/rowing_imu
+    - -Icomponents/rowing_softap
+    - -Icomponents/rowing_strain_gauge
+    - -Icomponents/rowing_usb

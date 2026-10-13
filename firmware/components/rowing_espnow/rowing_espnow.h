@@ -1,7 +1,8 @@
-// espnow.h
+// rowing_espnow.h
 #pragma once
 
 #include <cstdint>
+namespace Rowing {
 struct Packet {
   // TODO
 };
@@ -97,3 +98,4 @@ public:
    */
   bool register_follower(const uint8_t *mac_addr);
 };
+} // namespace Rowing
