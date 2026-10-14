@@ -1,10 +1,17 @@
 // rowing_imu.h
 #pragma once
 
+#include <Adafruit_BNO08x.h>
+
 namespace Rowing {
 class IMU {
 private:
-  // TODO pin numbers
+  
+  //pin numbers
+  int SDA;
+  int SDC;
+
+  //curr values
   float accX;
   float accY;
   float accZ;
@@ -12,13 +19,21 @@ private:
   float gyroY;
   float gyroZ;
 
+  //sensor value
+  sh2_SensorValue_t sensorValue;
+
+  //Adafruit object
+  Adafruit_BNO08x imu;
+
 public:
   /**
    * @brief Creates an IMU object
    *
    * @return An IMU object
    */
-  IMU(/* TODO relevant pins go here*/);
+  IMU(int SDA, int SDC);
+
+  IMU();
 
   /**
    * @brief Sets up the object to start collecting data
