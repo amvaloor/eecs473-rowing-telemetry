@@ -1,9 +1,1 @@
-#include <Arduino.h>
-
-void setup() {
-    // Initialization code
-}
-
-void loop() {
-    // Main execution loop
-}
+// implementation is in central.cpp
