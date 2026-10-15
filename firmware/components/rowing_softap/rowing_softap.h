@@ -2,11 +2,15 @@
 #pragma once
 
 #include <cstdint>
+class WebServer;
+class WebSocketsServer;
 namespace Rowing {
 class SoftAP {
 private:
   char ssid[32];
   char password[64];
+  WebServer *w = nullptr;
+  WebSocketsServer *ws = nullptr;
 
 public:
   /**
@@ -18,6 +22,7 @@ public:
    * @return A SoftAP object
    */
   SoftAP(const char *ssid, const char *password = nullptr);
+  ~SoftAP();
 
   /**
    * @brief Starts hosting the network
@@ -60,5 +65,6 @@ public:
    * @return Number of connected clients
    */
   uint8_t get_client_count() const;
+  void broadcastCounter(int counter);
 };
 } // namespace Rowing
