@@ -1,10 +1,12 @@
 // rowing_softap.cpp
 #include "rowing_softap.h"
+#include "stdlib_noniso.h"
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 #include <WiFi.h>
 #include <cstdint>
 #include <cstring>
+#include <string>
 static const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <body style="font-size: 5em; font-family: sans-serif; text-align: center;">
@@ -57,7 +59,7 @@ bool SoftAP::is_active() const {
 uint8_t SoftAP::get_client_count() const {}
 void SoftAP::broadcastCounter(int counter) {
   if (ws) {
-    ws->broadcastTXT(String(counter));
+    ws->broadcastTXT(String(counter).c_str());
   }
 }
 } // namespace Rowing
