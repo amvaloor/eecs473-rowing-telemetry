@@ -1,9 +1,7 @@
-#include "oar_unit.h"
-#include <Arduino.h>
 #include <esp_now.h>
 #include <WiFi.h>
 #include "rowing_imu.h"
-uint8_t centralAddress[] = {0x48, 0xAF, 0xF3, 0x6A, 0x72, 0xF4};
+uint8_t centralAddress[] = {0xB4, 0xBF, 0xE9, 0x14, 0xBA, 0xE8};
 using namespace Rowing;
 // Structure example to send data
 // Must match the receiver structure

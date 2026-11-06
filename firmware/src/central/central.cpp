@@ -1,8 +1,7 @@
-#include "central_unit.h"
-#include <Arduino.h>
 #include <esp_now.h>
 #include <WiFi.h>
 #include "rowing_imu.h"
+#include <esp_wifi.h>
 
 uint8_t coachAddress[] = {0x48, 0xAF, 0xF3, 0x69, 0x9D, 0x94};
 uint8_t seat1Address[] = {0x48, 0xAF, 0xF3, 0x6A, 0x6E, 0x98};
@@ -57,7 +56,8 @@ void setup() {
   
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
-
+  esp_wifi_set_max_tx_power(78); 
+  esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
@@ -90,7 +90,6 @@ void setup() {
 }
  
 void loop() {
-
   esp_err_t result = esp_now_send(0, (uint8_t *) &myData, sizeof(myData));
    
   if (result == ESP_OK) {
@@ -101,4 +100,3 @@ void loop() {
   }
   delay(2000);
 }
-
