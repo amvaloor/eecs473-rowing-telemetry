@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -33,6 +34,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rowing.telemetry.ui.theme.RowingTelemetryTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,8 +120,8 @@ fun LandscapeMode(modifier: Modifier = Modifier) {
                     navigator = { target -> screen = target }
                 )
             }
-            NavScreen.ROWER -> RowerScreen()
-            NavScreen.COACH -> CoachScreen()
+            NavScreen.ROWER -> DataScreen() // TODO
+            NavScreen.COACH -> DataScreen() // TODO
         }
     }
 }
@@ -131,7 +140,7 @@ fun HomeScreen(
         ) {
             Text(
                 text = "Choose Option",
-                fontSize = 32.sp
+                fontSize = 48.sp
             )
         }
         Row(
@@ -155,13 +164,7 @@ fun HomeScreen(
                     fontSize = 48.sp
                     )
             }
-            VerticalDivider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(16.dp),
-                thickness = 2.dp,
-                color = Color.Gray
-            )
+            RowingVerticalDivider()
             Button(
                 modifier = Modifier
                     .weight(1f)
@@ -180,17 +183,132 @@ fun HomeScreen(
     }
 }
 
+@Preview(
+    showBackground = true,
+    device = "spec:orientation=landscape,width=411dp,height=891dp"
+)
 @Composable
-fun RowerScreen(modifier: Modifier = Modifier) {
-    Text("rower screen")
+fun DataScreen(
+    //rowers: List<Int>,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        //ForceCurve(rowers)
+        ForceCurve(
+            modifier = Modifier.weight(1f)
+        )
+        RowingVerticalDivider()
+        Column() {
+            SingleValDisplay("Boat Speed", "10")
+            RowingHorizontalDivider()
+            SingleValDisplay(name = "Distance(m)", data = "2000")
+            RowingHorizontalDivider()
+            NavPanel()
+        }
+    }
 }
 
 @Composable
-fun CoachScreen(modifier: Modifier = Modifier) {
-
+fun ForceCurve(
+    //rowers: List<Int>,
+    modifier: Modifier = Modifier
+) {
+    Canvas(
+        modifier = Modifier
+    ) {
+        drawLine(
+            color = Color.Gray,
+            start = Offset(x = 0f, y = size.height / 2),
+            end = Offset(x = size.width, y = size.height / 2),
+            strokeWidth = 2.dp.toPx()
+        )
+        drawCircle(
+            color = Color.Red,
+            radius = 20.dp.toPx(),
+            center = Offset(x = size.width / 2, y = size.height / 4)
+        )
+        // TODO
+    }
 }
 
 @Composable
-fun ForceCurve(modifier: Modifier = Modifier) {
-    
+fun RowingHorizontalDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        thickness = 2.dp,
+        color = Color.Gray
+    )
+}
+
+@Composable
+fun RowingVerticalDivider(modifier: Modifier = Modifier) {
+    VerticalDivider(
+        modifier = Modifier
+            .fillMaxHeight()
+            .padding(16.dp),
+        thickness = 2.dp,
+        color = Color.Gray
+    )
+}
+
+@Composable
+fun SingleValDisplay(
+    name: String,
+    data: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = name,
+            fontSize = 20.sp
+        )
+        Text(
+            text = data,
+            fontSize = 36.sp,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
+@Composable
+fun NavPanel(modifier: Modifier = Modifier) {
+    var paused by rememberSaveable() {
+        mutableStateOf(false)
+    }
+    var togglePause = {
+        paused = !paused
+    }
+    Row(
+
+    ) {
+        IconButton(
+            onClick = togglePause,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+        ) {
+            Icon(
+                imageVector = if (paused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                contentDescription = if (paused) "Play Button" else "Pause Button",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Button(
+            onClick = {}, // TODO
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+        ) {
+            Text(
+                text = "Back",
+                fontSize = 48.sp
+            )
+        }
+    }
 }
