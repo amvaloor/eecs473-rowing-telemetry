@@ -42,6 +42,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +76,10 @@ fun GreetingPreview() {
     }
 }
 
-
+@Preview(
+    showBackground = true,
+    device = "spec:orientation=landscape,width=411dp,height=891dp"
+)
 @Composable
 fun MainApp(modifier: Modifier = Modifier) {
     val config = LocalConfiguration.current
@@ -120,8 +124,12 @@ fun LandscapeMode(modifier: Modifier = Modifier) {
                     navigator = { target -> screen = target }
                 )
             }
-            NavScreen.ROWER -> DataScreen() // TODO
-            NavScreen.COACH -> DataScreen() // TODO
+            NavScreen.ROWER -> DataScreen(
+                GoToHome = { screen = NavScreen.HOME }
+            ) // TODO
+            NavScreen.COACH -> DataScreen(
+                GoToHome = { screen = NavScreen.HOME }
+            ) // TODO
         }
     }
 }
@@ -170,7 +178,7 @@ fun HomeScreen(
                     .weight(1f)
                     .fillMaxHeight(),
                 onClick = {
-                    navigator(NavScreen.ROWER)
+                    navigator(NavScreen.COACH)
                 },
                 shape = RoundedCornerShape(48.dp)
             ) {
@@ -183,13 +191,14 @@ fun HomeScreen(
     }
 }
 
-@Preview(
-    showBackground = true,
-    device = "spec:orientation=landscape,width=411dp,height=891dp"
-)
+//@Preview(
+//    showBackground = true,
+//    device = "spec:orientation=landscape,width=411dp,height=891dp"
+//)
 @Composable
 fun DataScreen(
     //rowers: List<Int>,
+    GoToHome: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -200,12 +209,14 @@ fun DataScreen(
             modifier = Modifier.weight(1f)
         )
         RowingVerticalDivider()
-        Column() {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             SingleValDisplay("Boat Speed", "10")
             RowingHorizontalDivider()
             SingleValDisplay(name = "Distance(m)", data = "2000")
             RowingHorizontalDivider()
-            NavPanel()
+            NavPanel(GoToHome)
         }
     }
 }
@@ -215,21 +226,36 @@ fun ForceCurve(
     //rowers: List<Int>,
     modifier: Modifier = Modifier
 ) {
+    val path = remember { Path() }
     Canvas(
-        modifier = Modifier
+        modifier = modifier.fillMaxSize()
     ) {
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+
+        val strokeWidth = 2.dp.toPx()
+        val adjustment = canvasHeight / 10f
+
+        // x-axis
         drawLine(
             color = Color.Gray,
-            start = Offset(x = 0f, y = size.height / 2),
-            end = Offset(x = size.width, y = size.height / 2),
-            strokeWidth = 2.dp.toPx()
+            start = Offset(adjustment, canvasHeight - adjustment),
+            end = Offset(canvasWidth - adjustment, canvasHeight - adjustment),
+            strokeWidth = strokeWidth
         )
-        drawCircle(
-            color = Color.Red,
-            radius = 20.dp.toPx(),
-            center = Offset(x = size.width / 2, y = size.height / 4)
+
+        // y-axis
+        drawLine(
+            color = Color.Gray,
+            start = Offset(x = adjustment, y = adjustment),
+            end = Offset(x = adjustment, y = canvasHeight - adjustment),
+            strokeWidth = strokeWidth
         )
-        // TODO
+
+        // if (telemetryData.size < 2) return@Canvas
+        path.reset()
+
+
     }
 }
 
@@ -277,7 +303,10 @@ fun SingleValDisplay(
 }
 
 @Composable
-fun NavPanel(modifier: Modifier = Modifier) {
+fun NavPanel(
+    GoToHome: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var paused by rememberSaveable() {
         mutableStateOf(false)
     }
@@ -285,13 +314,14 @@ fun NavPanel(modifier: Modifier = Modifier) {
         paused = !paused
     }
     Row(
-
+        modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
         IconButton(
             onClick = togglePause,
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
+                .fillMaxHeight(),
+            shape = RoundedCornerShape(48.dp)
         ) {
             Icon(
                 imageVector = if (paused) Icons.Default.PlayArrow else Icons.Default.Pause,
@@ -299,11 +329,13 @@ fun NavPanel(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize()
             )
         }
+        RowingVerticalDivider()
         Button(
-            onClick = {}, // TODO
+            onClick = GoToHome,
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
+                .fillMaxHeight(),
+            shape = RoundedCornerShape(48.dp)
         ) {
             Text(
                 text = "Back",
