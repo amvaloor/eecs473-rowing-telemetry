@@ -115,6 +115,6 @@ public:
 
   int rower_data_receive(char *msg, int msg_len);
 
-  bool rower_data_send(float force, float angle);
+  bool rower_data_send(float force, float angle, float dist, float speed);
 };
 } // namespace Rowing

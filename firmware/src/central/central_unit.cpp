@@ -35,14 +35,17 @@ uint8_t CentralUnit::get_client_count() const {}
 
 int CentralUnit::rower_data_receive(char *msg, int msg_len) {
   int udp_size = udp.parsePacket();
-  return udp.read(msg, msg_len);
+  if (udp_size) {
+    return udp.read(msg, msg_len);
+  }
+  return 0;
 }
 
-bool CentralUnit::rower_data_send(float force, float angle) {
+bool CentralUnit::rower_data_send(float force, float angle, float dist, float speed) {
   udp.beginPacket(IPAddress(255, 255, 255, 255), 12345);
 
   char jsonbuf[128];
-  snprintf(jsonbuf, 128, "{\"angle\":%.2f, \"force\":%.2f}", angle, force);
+  snprintf(jsonbuf, 128, "{\"angle\":%.2f, \"force\":%.2f, \"distance\":%.2f, \"speed\":%.2f}", angle, force, dist, speed);
 
   udp.print(jsonbuf);
   udp.endPacket();
