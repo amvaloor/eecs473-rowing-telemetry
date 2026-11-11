@@ -57,13 +57,26 @@ import androidx.compose.runtime.collectAsState
 import java.net.InetAddress
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.util.Log
+import android.view.WindowManager
 
 class TelemetryViewModel : ViewModel() {
-    private val data = MutableStateFlow<List<Offset>>(emptyList())
-    val ro_data = data.asStateFlow()
+    private val forceCurveData = MutableStateFlow<List<Offset>>(emptyList())
+    val readOnlyForceCurveData = forceCurveData.asStateFlow()
+
+    private val distance = MutableStateFlow(0f)
+    val readOnlyDistance = distance.asStateFlow()
+
+    private val speed = MutableStateFlow(0f)
+    val readOnlySpeed = speed.asStateFlow()
+
+    var paused = MutableStateFlow(false)
 
     init {
         startListening()
+    }
+
+    fun togglePause() {
+        paused.value = !paused.value
     }
 
     private fun startListening() {
@@ -78,9 +91,11 @@ class TelemetryViewModel : ViewModel() {
                     val packet = DatagramPacket(buffer, buffer.size)
                     socket.receive(packet)
 
-                    val jstring = String(packet.data, 0, packet.length)
-                    Log.d("UDP", "Received raw packet: $jstring")
-                    parseData(jstring)
+                    if (!paused.value) {
+                        val jString = String(packet.data, 0, packet.length)
+                        Log.d("UDP", "Received raw packet: $jString")
+                        parseData(jString)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -93,20 +108,24 @@ class TelemetryViewModel : ViewModel() {
             val json = JSONObject(jstring)
             val force = json.getDouble("force").toFloat()
             val angle = json.getDouble("angle").toFloat()
+            val dist = json.getDouble("distance").toFloat()
+            val spd = json.getDouble("speed").toFloat()
             // TODO
 
             val newPoint = Offset(angle, force)
 
-            val updatedData = data.value.toMutableList()
+            val updatedForceCurveData = forceCurveData.value.toMutableList()
 
-            if (!updatedData.isEmpty() && angle < updatedData.last().x) {
-                updatedData.clear()
+            if (updatedForceCurveData.isNotEmpty() && angle < updatedForceCurveData.last().x) {
+                updatedForceCurveData.clear()
             }
-            updatedData.add(newPoint)
+            updatedForceCurveData.add(newPoint)
 
-            if (updatedData.size > 1000) updatedData.removeAt(0)
+            if (updatedForceCurveData.size > 1000) updatedForceCurveData.removeAt(0)
 
-            data.value = updatedData
+            forceCurveData.value = updatedForceCurveData
+            distance.value = dist
+            speed.value = spd
         } catch (e: Exception) {
             Log.e("UDP", "Failed to parse JSON", e)
             e.printStackTrace()
@@ -117,6 +136,7 @@ class TelemetryViewModel : ViewModel() {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         setContent {
             RowingTelemetryTheme {
@@ -170,7 +190,9 @@ fun LandscapeMode(modifier: Modifier = Modifier) {
         }
 
         val view: TelemetryViewModel = viewModel()
-        val force_angle_data by view.ro_data.collectAsState()
+        val forceAngleData by view.readOnlyForceCurveData.collectAsState()
+        val distance by view.readOnlyDistance.collectAsState()
+        val speed by view.readOnlySpeed.collectAsState()
 
         when (screen) {
             NavScreen.HOME -> {
@@ -179,12 +201,18 @@ fun LandscapeMode(modifier: Modifier = Modifier) {
                 )
             }
             NavScreen.ROWER -> DataScreen(
-                force_angle_data = force_angle_data,
-                GoToHome = { screen = NavScreen.HOME }
+                forceAngleData = forceAngleData,
+                distance = distance,
+                speed = speed,
+                goToHome = { screen = NavScreen.HOME },
+                view = view
             ) // TODO
             NavScreen.COACH -> DataScreen(
-                force_angle_data = force_angle_data,
-                GoToHome = { screen = NavScreen.HOME }
+                forceAngleData = forceAngleData,
+                distance = distance,
+                speed = speed,
+                goToHome = { screen = NavScreen.HOME },
+                view = view
             ) // TODO
         }
     }
@@ -249,34 +277,37 @@ fun HomeScreen(
 
 @Composable
 fun DataScreen(
-    force_angle_data: List<Offset>,
-    GoToHome: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    forceAngleData: List<Offset>,
+    distance: Float,
+    speed: Float,
+    goToHome: () -> Unit = {},
+    view: TelemetryViewModel,
 ) {
     Row(
         modifier = Modifier.fillMaxSize()
     ) {
         //ForceCurve(rowers)
         ForceCurve(
-            force_angle_data = force_angle_data,
+            forceAngleData = forceAngleData,
             modifier = Modifier.weight(1f)
         )
         RowingVerticalDivider()
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            SingleValDisplay("Boat Speed", "10")
+            SingleValDisplay("Boat Speed", speed.toString())
             RowingHorizontalDivider()
-            SingleValDisplay(name = "Distance(m)", data = "2000")
+            SingleValDisplay(name = "Distance(m)", data = distance.toString())
             RowingHorizontalDivider()
-            NavPanel(GoToHome)
+            NavPanel(goToHome = goToHome, view = view)
         }
     }
 }
 
 @Composable
 fun ForceCurve(
-    force_angle_data: List<Offset>,
+    forceAngleData: List<Offset>,
     modifier: Modifier = Modifier
 ) {
     val path = remember { Path() }
@@ -306,8 +337,8 @@ fun ForceCurve(
         )
 
         // if (telemetryData.size < 2) return@Canvas
-        UpdateSingleCurve(
-            data = force_angle_data,
+        updateSingleCurve(
+            data = forceAngleData,
             path = path,
             canvasWidth = canvasWidth,
             canvasHeight = canvasHeight,
@@ -318,7 +349,7 @@ fun ForceCurve(
     }
 }
 
-fun DrawScope.UpdateSingleCurve(
+fun DrawScope.updateSingleCurve(
     data: List<Offset> = emptyList(),
     path: Path,
     color: Color = Color.Blue,
@@ -397,34 +428,30 @@ fun SingleValDisplay(
 
 @Composable
 fun NavPanel(
-    GoToHome: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    goToHome: () -> Unit,
+    view: TelemetryViewModel
 ) {
-    var paused by rememberSaveable() {
-        mutableStateOf(false)
-    }
-    var togglePause = {
-        paused = !paused
-    }
+    val isPaused by view.paused.collectAsState()
     Row(
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
         IconButton(
-            onClick = togglePause,
+            onClick = { view.togglePause() },
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
             shape = RoundedCornerShape(48.dp)
         ) {
             Icon(
-                imageVector = if (paused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                contentDescription = if (paused) "Play Button" else "Pause Button",
+                imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                contentDescription = if (isPaused) "Play Button" else "Pause Button",
                 modifier = Modifier.fillMaxSize()
             )
         }
         RowingVerticalDivider()
         Button(
-            onClick = GoToHome,
+            onClick = goToHome,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
