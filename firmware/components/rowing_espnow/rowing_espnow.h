@@ -2,6 +2,8 @@
 #pragma once
 
 #include <cstdint>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 namespace Rowing {
 struct Packet {
   // TODO
@@ -16,7 +18,16 @@ class ESP_NOW {
 private:
   uint8_t target[6]; // MAC address of target
   Node *followers;
-  // TODO semaphore to protect followers array
+  int follower_count = 0;
+  int registered_followers = 0;
+
+  SemaphoreHandle_t s;
+
+  static ESP_NOW *instance;
+
+  void handleDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
+
+  void handleDataSent(const uint8_t *mac, esp_now_send_status_t status);
 
 public:
   /**
@@ -42,6 +53,11 @@ public:
    */
   bool begin(uint8_t channel, int follower_count);
 
+  static void OnDataRecvWrapper(const uint8_t *mac, const uint8_t *incomingData,
+                                int len);
+
+  static void OnDataSentWrapper(const uint8_t *mac,
+                                esp_now_send_status_t status);
   /**
    * @brief Stop ESP-NOW
    *
