@@ -1,0 +1,51 @@
+#include "HX711.h"
+
+// Define the ESP32 pins connected to the HX711
+const int HX711_DOUT_PIN = 21;
+const int HX711_SCK_PIN = 22;
+
+HX711 scale;
+
+// CALIBRATION FACTOR:
+// Leave this at 1.0 initially to read raw units.
+// Once you calibrate with weights, change this number.
+float calibration_factor = 1.0; 
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000); // Give the ESP32 a moment to initialize
+  
+  Serial.println("--- Carbon Fiber Oar Strain Gauge System ---");
+  Serial.println("Initializing the HX711...");
+
+  // Initialize the HX711 library
+  scale.begin(HX711_DOUT_PIN, HX711_SCK_PIN);
+
+  // Apply the calibration factor
+  scale.set_scale(calibration_factor);
+  
+  // TARE: Resets the scale to 0. 
+  // Crucial: Make sure the oar is perfectly still and has zero load right now!
+  Serial.println("Taring system... Do not move or touch the oar.");
+  scale.tare(); 
+  
+  Serial.println("System Ready! Apply force to the oar to see readings.");
+  Serial.println("-------------------------------------------------");
+}
+
+void loop() {
+  // Check if the HX711 module is responding
+  if (scale.is_ready()) {
+    
+    // scale.get_units(5) takes an average of 5 readings to smooth out high-frequency noise
+    float reading = scale.get_units(5);
+    
+    //Serial.print("Strain Value: ");
+    Serial.println(reading, 2); // Prints the value with 2 decimal places
+    
+  } else {
+    Serial.println("Error: HX711 not found. Check your wiring connections.");
+  }
+  
+  delay(100); // Polls data roughly 10 times a second
+}
