@@ -39,10 +39,80 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import androidx.compose.runtime.collectAsState
+import java.net.InetAddress
+import androidx.lifecycle.viewmodel.compose.viewModel
+import android.util.Log
+
+class TelemetryViewModel : ViewModel() {
+    private val data = MutableStateFlow<List<Offset>>(emptyList())
+    val ro_data = data.asStateFlow()
+
+    init {
+        startListening()
+    }
+
+    private fun startListening() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val port = 12345
+                val socket = DatagramSocket(port)
+                val buffer = ByteArray(1024)
+
+                Log.d("UDP", "Socket opened, waiting for packets...")
+                while (isActive) {
+                    val packet = DatagramPacket(buffer, buffer.size)
+                    socket.receive(packet)
+
+                    val jstring = String(packet.data, 0, packet.length)
+                    Log.d("UDP", "Received raw packet: $jstring")
+                    parseData(jstring)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun parseData(jstring: String) {
+        try {
+            val json = JSONObject(jstring)
+            val force = json.getDouble("force").toFloat()
+            val angle = json.getDouble("angle").toFloat()
+            // TODO
+
+            val newPoint = Offset(angle, force)
+
+            val updatedData = data.value.toMutableList()
+
+            if (!updatedData.isEmpty() && angle < updatedData.last().x) {
+                updatedData.clear()
+            }
+            updatedData.add(newPoint)
+
+            if (updatedData.size > 1000) updatedData.removeAt(0)
+
+            data.value = updatedData
+        } catch (e: Exception) {
+            Log.e("UDP", "Failed to parse JSON", e)
+            e.printStackTrace()
+        }
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,28 +121,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             RowingTelemetryTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    MainApp(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Composable
-fun GreetingPreview() {
-    RowingTelemetryTheme {
-        Greeting("Android")
     }
 }
 
@@ -106,18 +160,18 @@ fun PortraitMode() {
         }
     }
 }
-
 enum class NavScreen { HOME, ROWER, COACH }
-@Preview(
-    showBackground = true,
-    device = "spec:orientation=landscape,width=411dp,height=891dp"
-)
+
 @Composable
 fun LandscapeMode(modifier: Modifier = Modifier) {
     RowingTelemetryTheme {
         var screen by rememberSaveable() {
             mutableStateOf(NavScreen.HOME)
         }
+
+        val view: TelemetryViewModel = viewModel()
+        val force_angle_data by view.ro_data.collectAsState()
+
         when (screen) {
             NavScreen.HOME -> {
                 HomeScreen(
@@ -125,9 +179,11 @@ fun LandscapeMode(modifier: Modifier = Modifier) {
                 )
             }
             NavScreen.ROWER -> DataScreen(
+                force_angle_data = force_angle_data,
                 GoToHome = { screen = NavScreen.HOME }
             ) // TODO
             NavScreen.COACH -> DataScreen(
+                force_angle_data = force_angle_data,
                 GoToHome = { screen = NavScreen.HOME }
             ) // TODO
         }
@@ -191,14 +247,10 @@ fun HomeScreen(
     }
 }
 
-//@Preview(
-//    showBackground = true,
-//    device = "spec:orientation=landscape,width=411dp,height=891dp"
-//)
 @Composable
 fun DataScreen(
-    //rowers: List<Int>,
-    GoToHome: () -> Unit,
+    force_angle_data: List<Offset>,
+    GoToHome: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -206,6 +258,7 @@ fun DataScreen(
     ) {
         //ForceCurve(rowers)
         ForceCurve(
+            force_angle_data = force_angle_data,
             modifier = Modifier.weight(1f)
         )
         RowingVerticalDivider()
@@ -223,7 +276,7 @@ fun DataScreen(
 
 @Composable
 fun ForceCurve(
-    //rowers: List<Int>,
+    force_angle_data: List<Offset>,
     modifier: Modifier = Modifier
 ) {
     val path = remember { Path() }
@@ -253,10 +306,50 @@ fun ForceCurve(
         )
 
         // if (telemetryData.size < 2) return@Canvas
-        path.reset()
-
-
+        UpdateSingleCurve(
+            data = force_angle_data,
+            path = path,
+            canvasWidth = canvasWidth,
+            canvasHeight = canvasHeight,
+            fixedMaxX = 1000f,
+            fixedMaxY = 1000f,
+            adjustment = adjustment
+        )
     }
+}
+
+fun DrawScope.UpdateSingleCurve(
+    data: List<Offset> = emptyList(),
+    path: Path,
+    color: Color = Color.Blue,
+    canvasWidth: Float = 100f,
+    canvasHeight: Float = 100f,
+    fixedMaxX: Float = 1000f,
+    fixedMaxY: Float = 1000f,
+    adjustment: Float
+) {
+    path.reset()
+    if (data.size < 2) return
+
+    val graphWidth = canvasWidth - (adjustment * 2)
+    val graphHeight = canvasHeight - (adjustment * 2)
+
+    data.forEachIndexed { index, point ->
+        val x = adjustment + (point.x / fixedMaxX) * graphWidth
+        val y = (canvasHeight - adjustment) - ((point.y / fixedMaxY) * graphHeight)
+
+        if (index == 0) {
+            path.moveTo(x, y)
+        } else {
+            path.lineTo(x, y)
+        }
+    }
+
+    drawPath(
+        path = path,
+        color = color,
+        style = Stroke(width = 3.dp.toPx())
+    )
 }
 
 @Composable
@@ -343,4 +436,22 @@ fun NavPanel(
             )
         }
     }
+}
+
+fun zeroAngle() {
+    val port = 12345 // TODO
+    val ip = "192.168.4.1"
+
+    val message = "T"
+    val data = message.toByteArray()
+    val packet = DatagramPacket(
+        data,
+        data.size,
+        InetAddress.getByName(ip),
+        port
+    )
+
+    val sock = DatagramSocket()
+    sock.send(packet)
+    sock.close()
 }
