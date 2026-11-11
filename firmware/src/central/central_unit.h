@@ -3,12 +3,15 @@
 
 #include "rowing_espnow.h"
 #include "rowing_softap.h"
+#include <WiFiUdp.h>
 #include <cstdint>
+#include <string>
 namespace Rowing {
 class CentralUnit {
 private:
   ESP_NOW esp;
   SoftAP ap;
+  WiFiUDP udp;
   uint8_t channel;
 
 public:
@@ -109,5 +112,9 @@ public:
    * @return Number of connected clients
    */
   uint8_t get_client_count() const;
+
+  int rower_data_receive(char *msg, int msg_len);
+
+  bool rower_data_send(float force, float angle);
 };
 } // namespace Rowing
